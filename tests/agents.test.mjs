@@ -88,8 +88,28 @@ test('a created session is filed under the workspace whose path is its cwd', asy
   const { ctx } = scanningContext({
     workspaceRegistry: { list: async () => [{ path: 'F:\\dkitchen' }, workspace] },
   })
-  await createSession(ctx, { sessionId: 'session-e', cwd: 'f:\\autoresearch', route: ROUTE, config: {} })
+  await createSession(ctx, { sessionId: 'session-e', cwd: 'F:\\AutoResearch', route: ROUTE, config: {} })
   assert.deepEqual(attached, ['session-e'])
+})
+
+test('a cwd differing only in case matches a workspace on Windows, and only there', async () => {
+  // Windows paths are case-insensitive, POSIX paths are not, so the same pair must behave
+  // differently on each. Asserting one answer for both is what made this suite fail on Linux.
+  const attached = []
+  const workspace = { path: '/srv/Repo', async attachSession(id) { attached.push(id) } }
+  const { ctx } = scanningContext({
+    workspaceRegistry: { list: async () => [workspace] },
+  })
+  await createSession(ctx, { sessionId: 'session-c', cwd: '/srv/repo', route: ROUTE, config: {} })
+  assert.deepEqual(attached, process.platform === 'win32' ? ['session-c'] : [])
+})
+
+test('a trailing separator does not stop a workspace from matching', async () => {
+  const attached = []
+  const workspace = { path: '/srv/repo/', async attachSession(id) { attached.push(id) } }
+  const { ctx } = scanningContext({ workspaceRegistry: { list: async () => [workspace] } })
+  await createSession(ctx, { sessionId: 'session-t', cwd: '/srv/repo', route: ROUTE, config: {} })
+  assert.deepEqual(attached, ['session-t'])
 })
 
 test('a workspace attach failure does not stop the session from opening', async () => {
