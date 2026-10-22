@@ -4,12 +4,19 @@
 [![Release](https://img.shields.io/github/v/release/songmingjun3/dsh-kitchen-plugin)](https://github.com/songmingjun3/dsh-kitchen-plugin/releases/latest)
 [![License](https://img.shields.io/github/license/songmingjun3/dsh-kitchen-plugin)](LICENSE)
 
-A Deep​Seek​ Harness plugin that turns a repository into a kitchen: stations, tickets, long
+**English** | [简体中文](README.zh-CN.md)
+
+A DeepSeek Harness plugin that turns a repository into a kitchen: stations, tickets, long
 jobs, and the bell that wakes a session when its job finishes.
 
 Installing the bundle is the whole installation. The tools are registered inside the harness
 process through `ctx.tools`, so there is no package to install, no separate profile to boot, no
 broker to start, and no MCP server to spawn. Nothing else needs running.
+
+> **Based on [917Dhj/dkitchen](https://github.com/917Dhj/dkitchen).** The kitchen itself — the
+> stations, the ticket workflow, the house rules, and the bell that wakes a session — is the
+> design of [917Dhj/dkitchen](https://github.com/917Dhj/dkitchen), and this plugin is its port
+> to the DeepSeek Harness plugin runtime. See [Acknowledgements](#acknowledgements).
 
 ## Install
 
@@ -118,3 +125,28 @@ run `node --test --experimental-test-isolation=none "tests/*.test.mjs"` there in
 Releasing: bump `version` in `package.json`, then push a matching tag such as `v1.0.0`. The
 release workflow checks the two agree, runs the suite, regenerates the market index for that
 tag's commit, and publishes the GitHub release.
+
+## Acknowledgements
+
+This plugin is a port, not an original design. The kitchen it implements — stations with fixed
+duties, work handed off through GitHub issues as tickets, the status block every comment opens
+with, the rules for when a station must stop and ask, and the bell that wakes a session when its
+long job exits — comes from **[917Dhj/dkitchen](https://github.com/917Dhj/dkitchen)**, and this
+repository follows its functional design closely on purpose: the vocabulary, the refusals, and
+the order in which the orchestrator does things are all meant to match. Thank you to
+917Dhj/dkitchen for thinking it through and writing it down.
+
+What differs here is the runtime, not the kitchen. That project drove DeepSeek Harness sessions
+from outside the process — a CLI, a broker, an MCP server, a separate profile. This one
+registers the same tools inside the harness through `ctx.tools`, so installing the bundle is the
+whole installation. The behaviour is meant to stay the same; where this port had to choose, the
+choice is recorded in the commit that made it and in the tests.
+
+The metaphor, and much of the workflow, traces further back: the Michelin-kitchen way of running
+agents comes from Lauren Tan ([Poteto](https://github.com/poteto)), and the practice of keeping
+tickets on GitHub issues started from the issue tracker setup in
+[Matt Pocock's skills](https://github.com/mattpocock/skills).
+
+## License
+
+[MIT](LICENSE)

@@ -1,5 +1,7 @@
 # 🛎️ The dkitchen plugin
 
+[Back to the README](../README.md) · [简体中文](../README.zh-CN.md)
+
 dkitchen ships as a Deep​Seek​ Harness plugin. Installing the bundle is the whole installation:
 the tools are registered inside the harness process through `ctx.tools`, so there is no package
 to install, no broker to start, no MCP server to spawn, and no second profile to boot.
