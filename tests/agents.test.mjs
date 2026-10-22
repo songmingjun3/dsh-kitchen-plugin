@@ -11,7 +11,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { createSession } from '../lib/agents.js'
+import { createSession, followup } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -128,4 +128,22 @@ test('a title the harness refuses does not fail the session', async () => {
     sessionId: 'session-h', cwd: 'F:\\AutoResearch', route: ROUTE, config: {}, name: '设计',
   })
   assert.equal(opened.record.id, 'session-h')
+})
+
+test('a delivered message carries its own identity', async () => {
+  const sent = []
+  const handle = {
+    agent: {
+      async followup(message) { sent.push(message) },
+      async whenIdle() {},
+    },
+  }
+  await followup(handle, 'hello', { wait: true })
+  assert.equal(sent.length, 1)
+  // The stored `user/message` event keeps this id; without it the session is refused as
+  // corrupt the next time it is loaded.
+  assert.match(sent[0].id, /^[0-9a-f-]{36}$/)
+  assert.equal(sent[0].role, 'user')
+  assert.deepEqual(sent[0].content, [{ type: 'text', text: 'hello' }])
+  assert.deepEqual(sent[0].source, { kind: 'user' })
 })
