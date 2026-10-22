@@ -27,7 +27,9 @@
     "lib/**/*.js",
     "locale/*.json",
     "icon.svg",
-    "README.md"
+    "README.md",
+    "skills/**/*",
+    "kitchen/**/*.md"
   ],
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.4 <5.0.0",

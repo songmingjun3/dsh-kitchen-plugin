@@ -28,6 +28,7 @@ import { registerTicketTools } from './lib/ticket-tools.js'
 import { registerWatchTool } from './lib/watch-tools.js'
 import { registerApprovalAnswerer } from './lib/approval.js'
 import { registerConfigTools } from './lib/config-tools.js'
+import { ensureSkill, installedSkill } from './lib/skill.js'
 
 export const name = 'dkitchen'
 
@@ -72,6 +73,17 @@ export function apply(ctx, config = {}) {
       throw error
     }
   }
+
+  // The setup skill goes to the machine-wide root, so `/setup-dkitchen` exists in every
+  // project without a per-repository copy. A failure here must not stop the tools: a kitchen
+  // that cannot install a skill is still a working kitchen, and the note says what happened.
+  ctx.effect(() => {
+    const outcome = ensureSkill({ debug })
+    if (!outcome.installed && outcome.reason && outcome.reason !== 'already current') {
+      report('setup skill not installed:', outcome.reason)
+    }
+    return () => {}
+  })
 
   ctx.effect(() => {
     registerSessionTools(ctx, { resolveConfig, debug })
