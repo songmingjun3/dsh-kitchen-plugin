@@ -27,6 +27,7 @@ import { registerJobTools } from './lib/job-tools.js'
 import { registerTicketTools } from './lib/ticket-tools.js'
 import { registerWatchTool } from './lib/watch-tools.js'
 import { registerApprovalAnswerer } from './lib/approval.js'
+import { registerConfigTools } from './lib/config-tools.js'
 
 export const name = 'dkitchen'
 
@@ -78,6 +79,7 @@ export function apply(ctx, config = {}) {
     registerJobTools(ctx, { resolveConfig, debug })
     registerTicketTools(ctx, { resolveConfig, debug })
     registerWatchTool(ctx, { resolveConfig, debug })
+    registerConfigTools(ctx, { resolveConfig, debug })
     registerStatusTool(ctx, { resolveConfig, debug })
     report('registered tools')
     return () => {}

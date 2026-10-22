@@ -76,7 +76,8 @@ test('a healthy configuration registers the session and state tools', async () =
   }
   const names = ctx.registered.map((tool) => tool.name).sort()
   assert.deepEqual(names, [
-    'dkitchen_board', 'dkitchen_executor_status', 'dkitchen_info', 'dkitchen_launch',
+    'dkitchen_board', 'dkitchen_check_refs', 'dkitchen_config',
+    'dkitchen_executor_status', 'dkitchen_info', 'dkitchen_launch',
     'dkitchen_list_sessions', 'dkitchen_log', 'dkitchen_logs', 'dkitchen_merge',
     'dkitchen_new_session', 'dkitchen_read', 'dkitchen_relay', 'dkitchen_rename',
     'dkitchen_run_status', 'dkitchen_send', 'dkitchen_session_status', 'dkitchen_status',
