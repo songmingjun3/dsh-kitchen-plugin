@@ -1,15 +1,13 @@
 /**
  * Render the kitchen templates for a chosen set of modules.
  *
- * A translation of `render.py`. The templates mark optional blocks with
- * `<!-- module:name -->` … `<!-- /module:name -->`; rendering keeps the blocks whose module
- * was chosen and drops the rest, then removes every marker so the output carries no trace of
- * the mechanism. `<!-- fill: … -->` gaps are left alone: the setup skill fills them with the
- * repository's own facts.
+ * The templates mark optional blocks with `<!-- module:name -->` … `<!-- /module:name -->`;
+ * rendering keeps the blocks whose module was chosen and drops the rest, then removes every
+ * marker so the output carries no trace of the mechanism. `<!-- fill: … -->` gaps are left
+ * alone: the setup skill fills them with the repository's own facts.
  *
- * This exists in JavaScript so that a machine without Python can still run the setup skill.
- * The rules it implements must match the Python renderer exactly while both exist, because the
- * two produce files a person reads and edits.
+ * This runs in JavaScript so that the setup skill needs nothing but Node, which the harness
+ * already provides — the skill is installed into a repository that may have no other runtime.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -143,7 +141,7 @@ export function renderKitchen({ modules = [], out, kitchen } = {}) {
   return { written, blocks: blocks(blockText), kitchen: source }
 }
 
-/** The command line, kept close to the Python one so a README works for both. */
+/** The command line the setup skill runs: `render.js --modules … --out docs/agents`. */
 function main(argv) {
   const options = { modules: [], out: null, kitchen: null }
   for (let index = 0; index < argv.length; index++) {

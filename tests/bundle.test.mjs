@@ -42,8 +42,9 @@ test('the patch mounts one row with a debug switch', () => {
   assert.match(text, /id: dkitchen/)
   assert.match(text, /name: dsh-dkitchen/)
   assert.match(text, /debug: false/)
-  // The Python-era bundle mounted the MCP client; this one must not mount it. The comment
-  // above the row explains why, so only a `name:` line counts as mounting it.
+  // The tools are registered in this process, so the bundle must not also mount an MCP client:
+  // a second source of the same tools would shadow these and fail silently when it cannot
+  // start. Only a `name:` line counts as mounting a row.
   assert.doesNotMatch(text, /name:\s*'@deepseek-ai\/dsh-mcp-client'/)
 })
 

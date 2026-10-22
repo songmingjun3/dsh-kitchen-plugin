@@ -40,7 +40,7 @@ test('a put row is visible to get and load', () => {
   assert.equal(registry.load().size, 1)
 })
 
-test('the file uses the version 1 schema the Python runtime writes', () => {
+test('the file is written in the version 1 schema', () => {
   registry.put(record())
   const raw = JSON.parse(readFileSync(registry.path(), 'utf8'))
   assert.equal(raw.version, 1)
@@ -49,21 +49,23 @@ test('the file uses the version 1 schema the Python runtime writes', () => {
   assert.equal(raw.sessions['session-1'].created_ns, 1_700_000_000_000_000_000)
 })
 
-test('a row written by the Python runtime is read back intact', () => {
-  // Exactly the shape `registry.save()` produces.
-  const pythonWritten = {
+test('a row written by an earlier dkitchen is read back intact', () => {
+  // The state root is shared across upgrades, so a file left by an earlier version — including
+  // the one that wrote it from outside the harness — must still load. This is the shape such a
+  // file has: a version, then one row per session.
+  const earlier = {
     version: 1,
     sessions: {
       'session-p': {
-        id: 'session-p', name: 'From Python', station: 'orchestrator', cwd: 'F:/repo',
+        id: 'session-p', name: 'From an earlier version', station: 'orchestrator', cwd: 'F:/repo',
         created_ns: 1_690_000_000_000_000_000, issue: 42, repo: 'o/n',
         provider: 'xdpool-trae-cn', model: 'DeepSeek-V4-Pro', effort: 'high', closed: false,
       },
     },
   }
-  writeFileSync(registry.path(), JSON.stringify(pythonWritten), 'utf8')
+  writeFileSync(registry.path(), JSON.stringify(earlier), 'utf8')
   const row = registry.get('session-p')
-  assert.equal(row.name, 'From Python')
+  assert.equal(row.name, 'From an earlier version')
   assert.equal(row.issue, 42)
   assert.equal(row.repo, 'o/n')
   assert.equal(row.effort, 'high')

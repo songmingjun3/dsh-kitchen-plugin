@@ -176,8 +176,7 @@ test('the index url is the published raw url of this branch', () => {
   assert.ok(INDEX_URL.endsWith('/docs/market/index.json'))
 })
 
-test('bundleVersion reads the bundle manifest, not a pyproject', () => {
-  // There is no Python package to read a version from any more.
+test('bundleVersion reads the bundle manifest', () => {
   assert.match(bundleVersion(REPO), /^\d+\.\d+\.\d+/)
 })
 
