@@ -14,6 +14,7 @@ useDefineTool((definition) => definition)
 function fakeCtx({ sessions = [], agents = {} } = {}) {
   const registered = []
   const effects = []
+  const listeners = []
   // Sessions expose `id` and `deriveMessages()`; anything else is the caller's business.
   const live = sessions.map((session) => ({
     id: session.id,
@@ -21,6 +22,7 @@ function fakeCtx({ sessions = [], agents = {} } = {}) {
   }))
   return {
     registered,
+    listeners,
     tools: {
       register(tool) {
         // Mirror the registry's contract: a name, a schema with an explicit
@@ -38,6 +40,10 @@ function fakeCtx({ sessions = [], agents = {} } = {}) {
     sessions: {
       list: () => live,
       get: (id) => live.find((session) => session.id === id) ?? null,
+    },
+    // cordis event registration; the answerer is registered this way.
+    on(event, listener) {
+      listeners.push({ event, listener })
     },
     effect(body) {
       effects.push(body)
@@ -70,10 +76,11 @@ test('a healthy configuration registers the session and state tools', async () =
   }
   const names = ctx.registered.map((tool) => tool.name).sort()
   assert.deepEqual(names, [
-    'dkitchen_board', 'dkitchen_info', 'dkitchen_launch', 'dkitchen_list_sessions',
-    'dkitchen_logs', 'dkitchen_new_session', 'dkitchen_read', 'dkitchen_rename',
+    'dkitchen_board', 'dkitchen_executor_status', 'dkitchen_info', 'dkitchen_launch',
+    'dkitchen_list_sessions', 'dkitchen_log', 'dkitchen_logs', 'dkitchen_merge',
+    'dkitchen_new_session', 'dkitchen_read', 'dkitchen_relay', 'dkitchen_rename',
     'dkitchen_run_status', 'dkitchen_send', 'dkitchen_session_status', 'dkitchen_status',
-    'dkitchen_stop',
+    'dkitchen_stop', 'dkitchen_watch', 'dkitchen_watch_state',
   ])
 })
 

@@ -3,15 +3,15 @@
  *
  * The Python runtime this replaces needed three processes to do the same work: a broker
  * holding an ACP connection, the harness that connection drove, and an MCP server the tools
- * arrived through. None of that is necessary in-process. Sessions come from `ctx.agents`,
- * replies from `ctx.sessions`, and the tools register on `ctx.tools` directly — so installing
- * this bundle is the whole installation.
+ * arrived through. A plugin lives where the agents do, so `ctx.agents` creates a session,
+ * `ctx.sessions` reads the reply back, and `ctx.tools` carries the tools. Installing the
+ * bundle is then the whole installation — no `pip install`, no `ding plugin install`, no
+ * kitchen profile, no broker.
  *
  * One consequence of that move shapes everything here. A profile plugin is composed once, for
  * the whole process, but a kitchen belongs to a repository — and the harness serves many
  * repositories from that process. So the configuration is resolved **per call**, from the
- * directory a session works in, never once at mount time. A plugin that read
- * `process.cwd()` at startup would give every repository the first one's stations and routes.
+ * session's own working directory, never once at mount time.
  *
  * Registration failures are silent: a schema the registry refuses, or a service that is not
  * mounted, leaves the process running with no tool and no error. `debug` is how that becomes
@@ -24,25 +24,25 @@ import { resolveRoot } from './lib/cwd.js'
 import { registerSessionTools } from './lib/tools.js'
 import { registerStateTools } from './lib/state-tools.js'
 import { registerJobTools } from './lib/job-tools.js'
+import { registerTicketTools } from './lib/ticket-tools.js'
+import { registerWatchTool } from './lib/watch-tools.js'
+import { registerApprovalAnswerer } from './lib/approval.js'
 
 export const name = 'dkitchen'
 
 /**
  * Services this plugin needs.
  *
- * A profile without them leaves the plugin inactive rather than broken, which is the harness's
- * own convention: the plugin waits instead of throwing during composition.
+ * Every one of them is required, not awaited. Cordis refuses to read a service this array does
+ * not name — `cannot get property "workingDirectory" without inject` — and each of these is
+ * load-bearing: without `workingDirectory` a tool configures the wrong repository, without
+ * `approval` it cannot answer a policy, and without `jobs` a launch has nothing to register
+ * with. A profile missing one leaves the plugin inactive, which the harness reports, rather
+ * than running half a kitchen that fails in ways the user cannot see.
  */
-/**
- * Services this plugin needs.
- *
- * `workingDirectory` is required, not optional: cordis refuses to read a service this array
- * does not name, and a tool that cannot learn its session's repository configures the wrong
- * one. A profile without it leaves the plugin inactive, which the harness reports, instead of
- * silently running every repository as this process's directory.
- */
-export const inject = ['tools', 'agents', 'sessions', 'workingDirectory',
-  'jobs', 'subprocess']
+export const inject = [
+  'tools', 'agents', 'sessions', 'workingDirectory', 'jobs', 'subprocess', 'approval',
+]
 
 /**
  * Mount the kitchen.
@@ -76,8 +76,17 @@ export function apply(ctx, config = {}) {
     registerSessionTools(ctx, { resolveConfig, debug })
     registerStateTools(ctx, { resolveConfig, debug })
     registerJobTools(ctx, { resolveConfig, debug })
+    registerTicketTools(ctx, { resolveConfig, debug })
+    registerWatchTool(ctx, { resolveConfig, debug })
     registerStatusTool(ctx, { resolveConfig, debug })
     report('registered tools')
+    return () => {}
+  })
+
+  // The answerer is separate from the tools: it changes permission behaviour rather than
+  // adding capability, and with no `[approval]` section it answers nothing.
+  ctx.effect(() => {
+    registerApprovalAnswerer(ctx, { resolveConfig, debug })
     return () => {}
   })
 }
@@ -90,13 +99,14 @@ export function apply(ctx, config = {}) {
  * the caller is working in.
  */
 function registerStatusTool(ctx, { resolveConfig, debug }) {
+  void debug
   const schema = { type: 'object', additionalProperties: true, properties: {} }
   ctx.tools.register(defineTool({
     name: 'dkitchen_status',
     description: "What dkitchen sees for a repository: its kitchen stations, each station's "
-      + 'model route, and whether the configuration loads at all.',
+      + 'model route, the approval policy, and whether the configuration loads at all.',
     parameters: {
-      cwd: { type: 'string', description: 'Repository directory to inspect (default: this session\'s)' },
+      cwd: { type: 'string', description: "Repository directory to inspect (default: this session's)" },
     },
     output: { schema, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }] },
     async execute(args, exec) {
@@ -123,9 +133,9 @@ function registerStatusTool(ctx, { resolveConfig, debug }) {
         routes: Object.fromEntries(
           settings.kitchen.stations.map((station) => [station, settings.route(station)]),
         ),
-        hasConfig: settings.root !== undefined && resolved.source !== 'process'
-          ? true
-          : undefined,
+        approval: settings.approval,
+        logIssue: settings.log.issue,
+        configFile: settings.root === resolved.root,
       }
     },
   }))
