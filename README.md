@@ -1,11 +1,11 @@
 # dsh-dkitchen
 
-A DeepSeek Harness plugin that turns a repository into a kitchen: stations, tickets, long
+A Deep​Seek​ Harness plugin that turns a repository into a kitchen: stations, tickets, long
 jobs, and the bell that wakes a session when its job finishes.
 
 Installing the bundle is the whole installation. The tools are registered inside the harness
-process through `ctx.tools`, so there is no Python package to install, no separate profile to
-boot, no broker to start, and no MCP server to spawn. Nothing else needs running.
+process through `ctx.tools`, so there is no package to install, no separate profile to boot, no
+broker to start, and no MCP server to spawn. Nothing else needs running.
 
 ## What it gives a session
 
@@ -54,8 +54,7 @@ kitchen able to run what it was configured for; anything else calls `next()`. Wi
 `[approval]` section the plugin changes no permission behaviour at all.
 
 **A background job's settlement arrives as a session notice.** `ctx.jobs` announces it, so a
-session that launched work does not have to poll — the same bell the CLI had to build with
-tmux and detached processes.
+session that launched work does not have to poll.
 
 ## The page this bundle adds
 
@@ -63,8 +62,15 @@ tmux and detached processes.
 is installed and enabled, and says where a repository's configuration lives. It has no
 buttons, because nothing here needs running.
 
-## What this replaces
+## Layout
 
-The Python `ding` runtime drove sessions over ACP through a broker, and shipped its tools
-through an MCP server. All three existed because the tools lived outside the harness. They now
-live inside it. `docs/ding.md` documents both, and says which parts of the CLI remain.
+| Path | Role |
+| --- | --- |
+| `index.js` | Mounting the plugin: injected services, per-call config resolution, tool registration |
+| `lib/` | The tools and the rules behind them |
+| `kitchen/` | The station rules the setup skill renders into a repository |
+| `skills/setup-dkitchen/` | The setup skill, with a renderer that needs only Node |
+| `tests/` | The suite: `node --test "tests/*.test.mjs"` |
+
+`docs/plugin.md` in the repository is the user-facing guide: installing, every tool, and every
+`.dkitchen.toml` key.

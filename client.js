@@ -1,12 +1,11 @@
 /**
  * The dkitchen section on this bundle's page in Plugins.
  *
- * In the Python era this page told the user to run `pip install dkitchen` and `ding plugin
- * install`, because the bundle was only a shim that spawned an MCP server. None of that
- * applies now: the tools are registered in-process, so installing the bundle *is* the
- * installation. What a user still needs to know is per-repository — every call reports the
- * repo it resolved, so a kitchen configured in one checkout and used from another shows the
- * mismatch in that repo rather than seeming to do nothing at all.
+ * The tools are registered in-process, so installing the bundle *is* the installation: there
+ * is no command to run afterwards and nothing to point at an interpreter. What a user still
+ * needs to know is per-repository — every call reports the repo it resolved, so a kitchen
+ * configured in one checkout and used from another shows the mismatch in that repo rather than
+ * seeming to do nothing at all.
  *
  * It renders into `plugins.detail.section`, the slot a plugin uses for something to say about
  * a bundle, rather than `plugins.bundle.config`, which is a settings form: nothing here is

@@ -4,7 +4,7 @@ Every piece of work is a ticket: a GitHub issue in this repo, handled with `gh`.
 
 ## Executor comments
 
-When you take over a ticket, post a comment with the line `DSH owner: <session id>`. `ding` delivers messages for the ticket to the latest owner line, so a new executor taking over posts its own.
+When you take over a ticket, post a comment with the line `DSH owner: <session id>`. `dkitchen_relay` and `dkitchen_send` deliver messages for the ticket to the latest owner line, so a new executor taking over posts its own.
 
 Every comment you post carries `DSH session: <session id>`. In a station's shell, `$DSH_SESSION_ID` already holds it (PowerShell: `$env:DSH_SESSION_ID`).
 

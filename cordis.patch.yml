@@ -1,9 +1,7 @@
 # Mount dkitchen's tools into this profile.
 #
-# Unlike the Python-era bundle, `@deepseek-ai/dsh-mcp-client` is not mounted: the tools are
-# registered in this process through `ctx.tools`, so there is no subprocess to talk MCP to,
-# no broker to own it, and no separate harness profile to boot. Installing this bundle is the
-# whole installation.
+# The tools are registered in this process through `ctx.tools`, so there is no subprocess to
+# talk to and no MCP client row to insert: installing this bundle is the whole installation.
 - insert:
     - id: dkitchen
       name: dsh-dkitchen

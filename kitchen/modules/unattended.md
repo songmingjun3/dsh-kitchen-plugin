@@ -4,23 +4,27 @@ When the user is away, an issue watcher wakes the orchestrator, which moves forw
 
 ## The watch
 
-The orchestrator runs the watch in the background of its main checkout, always with the same command. After handling each batch it starts the watch again; that is the last step of every round.
+The orchestrator calls the watch at the end of every round, and calls it again after handling each batch.
 
-```bash
-ding watch
+```text
+dkitchen_watch()
 ```
 
-The watch only reads GitHub, `ding board`, and tmux; it calls no model. It exits, waking the orchestrator, about 5 minutes after the first of these appears, so that related changes arrive as one batch:
+The tool returns one batch and ends; it does not sit in the background waiting. That is the shape a tool has to have — a call that never returned would hold its turn open forever — so the orchestrator calling it in a loop *is* the watch.
+
+It only reads GitHub and the run records; it calls no model. One call reports everything that appeared since the previous one, gathered into a single batch so related changes arrive together:
 
 - an executor comment whose Status is not `in progress`, or whose Waiting on names a station or the user;
 - a comment from the user;
 - a `status:*` label being added;
 - a new PR;
-- an executor gone quiet: `in progress` for over 6 hours without a comment, with no running `ding run` and no live tmux job whose session name contains `issue<ticket number>` (the tmux half applies on Linux; on Windows the watch reads the jobs `ding` itself started).
+- an executor gone quiet: `in progress` for over 6 hours without a comment, with no job running for it. `stale_hours` changes the threshold, and `check_stale=false` leaves quiet executors out.
 
-Verifier comments never wake it on their own, since the verifier also messages the orchestrator; they are listed in the next batch for reference. It skips the orchestrator log ticket set in `.dkitchen.toml`. One watch runs at a time; a second exits at once. `ding watch --help` lists the timing options.
+Verifier comments never wake it on their own, since the verifier also messages the orchestrator; they are listed in the next batch for reference. It skips the orchestrator log ticket set in `.dkitchen.toml`; `skip_issue` adds others. One watch runs at a time: a second call while one is in flight is refused rather than producing a duplicate batch.
 
-A closed session or a host reboot stops the watch silently. When the user is back, the orchestrator's background tasks show whether it is still running.
+The state file — where the next batch starts from, and what has already been reported — is worth inspecting when a batch repeats: `dkitchen_watch_state` shows it, and `reset=true` forgets it.
+
+A closed session or a host reboot stops the round: the watch is a call this session makes, so when the session is gone, nothing is watching. When the user is back, `dkitchen_board` shows which stations are still open.
 
 ## What the orchestrator moves forward
 
@@ -48,8 +52,11 @@ Waiting for the user: changing the goal, the dataset, or experimental conditions
 
 After each batch, the orchestrator records it on the pinned "Orchestrator log" ticket:
 
-```bash
-ding log --item '#42 told the executor to start stage 2; approved in the ticket budget' --pending '#57 needs a dataset choice'
+```text
+dkitchen_log(
+  items=["#42 told the executor to start stage 2; approved in the ticket budget"],
+  pending=["#57 needs a dataset choice"],
+)
 ```
 
-The time is filled in, in UTC. Each automatic action gets one `--item`: the ticket, what was done, and which approval covered it. Each matter waiting for the user gets one `--pending`; leave it out when there are none.
+The time is filled in, in UTC. Each automatic action gets one `items` entry: the ticket, what was done, and which approval covered it. Each matter waiting for the user gets one `pending` entry; leave the list empty when there are none.

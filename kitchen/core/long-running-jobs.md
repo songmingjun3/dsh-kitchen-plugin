@@ -1,20 +1,21 @@
 # Long-running jobs
 
-Start every CPU, GPU, or API job that outlives a turn with `ding launch`, however short you expect it to be. It opens the job under a name of your choosing, wraps it with `ding run`, and wakes the session that launched it when the job exits. The same command works on Linux (tmux) and Windows (a detached process), and `ding logs` / `ding stop` work on both.
+Start every CPU, GPU, or API job that outlives a turn with the `dkitchen_launch` tool, however short you expect it to be. It registers the job with the harness under a name of your choosing and wakes the session that launched it when the job exits. The same call works on Linux and Windows, and `dkitchen_logs` / `dkitchen_stop` work on both.
 
-```bash
-ding launch issue42-stage1 --message "$message" --record /absolute/path/task-exit.jsonl -- env OMP_NUM_THREADS=8 bash /absolute/path/task.sh
-ding logs issue42-stage1            # the job's own latest output
-ding stop issue42-stage1            # end it and everything it started
+```text
+dkitchen_launch(name="issue42-stage1", command=["env", "OMP_NUM_THREADS=8", "bash", "/absolute/path/task.sh"])
+dkitchen_logs(job="<the id dkitchen_launch returned>")      # the job's own latest output
+dkitchen_stop(job="<the same id>")                          # end it and everything it started
 ```
 
 After launching, end your turn: the job's exit wakes you. Look at progress only when the user asks.
 
-- **Where the output goes**: on Linux the job runs in tmux session `ding-NAME` and the pane stays open after exit; read it with `tmux attach -t ding-NAME` and close it with `tmux kill-session -t =ding-NAME` when done. On Windows the job runs detached and its output goes to a log file that `ding launch` prints and `ding logs NAME` reads.
-- **The environment**: a launched job inherits this process's environment plus `DSH_SESSION_ID` and `DKITCHEN_RUN_ID`. On Linux under tmux, only `PATH`, `HOME`, `PYTHONPATH`, and the session id are guaranteed, so pass anything else explicitly as `env K=V` in the command.
-- **After exit**: the record says which exit code it was, and the wake-up message is `Task NAME exited; inspect <record>` unless you gave your own.
-- **Unwrapped jobs**: on Linux, the end of `ding board` lists tmux jobs on this host that have run for over 10 minutes without `ding`. The orchestrator asks the executor that owns one to relaunch it with `ding launch`. Windows has no such audit; `ding board` lists the jobs `ding` itself started.
-- **Missed wake-ups**: the wrapper was killed, the host rebooted, or the job hangs. The wake-up comes once, when the job exits, so follow-up messages are never queued in advance. `ding board` shows `lost` or `notify_failed` when this happened.
+- **How the notice arrives**: the harness announces the settlement as an in-session notice, so you do not poll. Nothing is queued in advance: a wake-up you slept through does not come again, and `dkitchen_logs` is then how you catch up.
+- **What a job id is**: `dkitchen_launch` returns one, and it — not the name — is what `dkitchen_logs` and `dkitchen_stop` take. A job belongs to the session that started it, so one session cannot read or stop another's.
+- **Where the output goes**: the harness buffers the job's standard output and error, and `dkitchen_logs` returns the trailing lines of it (40 by default, or `lines=N`). Read it from there rather than from a terminal: there is no pane to attach to.
+- **The environment**: a launched job is a child of the harness process and inherits its environment. The session id is not added for it, so pass anything it needs explicitly, as `env K=V` at the front of the command.
+- **After exit**: `dkitchen_run_status` lists the jobs this session started, from the run record the kitchen keeps, so a job whose notice you missed is still accounted for.
+- **A command that cannot start** fails at launch, with the reason, rather than as a job that immediately reports failure.
 
 ## Resumable jobs
 
@@ -36,4 +37,4 @@ Other users' processes are never touched. Processes under our own account are ou
 
 - **Restarts and parameter changes** of shared services are the user's. Before one, the clients are told to stop at a checkpoint with SIGINT; afterwards they resume with their original commands.
 - **Tunnels**: when a tunnel is down, the orchestrator, or the executor that needs it, reopens it. <!-- fill: where tunnels run and the command for each. -->
-- **A host reboot** takes the running jobs and tunnels with it, and `ding run` has no chance to write exit records: the job's exit record is empty and its process is gone. Reopen the tunnels first, then have each ticket resume with its original command.
+- **A host reboot** takes the running jobs and tunnels with it, and a job that was running has no chance to report how it ended. Reopen the tunnels first, then have each ticket resume with its original command through `dkitchen_launch`.

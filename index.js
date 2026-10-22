@@ -1,12 +1,9 @@
 /**
  * dkitchen as a DeepSeek Harness plugin.
  *
- * The Python runtime this replaces needed three processes to do the same work: a broker
- * holding an ACP connection, the harness that connection drove, and an MCP server the tools
- * arrived through. A plugin lives where the agents do, so `ctx.agents` creates a session,
- * `ctx.sessions` reads the reply back, and `ctx.tools` carries the tools. Installing the
- * bundle is then the whole installation — no `pip install`, no `ding plugin install`, no
- * kitchen profile, no broker.
+ * A plugin lives where the agents do, so `ctx.agents` creates a session, `ctx.sessions` reads
+ * the reply back, and `ctx.tools` carries the tools. Installing the bundle is then the whole
+ * installation: no package to install, no second profile, no process to keep alive.
  *
  * One consequence of that move shapes everything here. A profile plugin is composed once, for
  * the whole process, but a kitchen belongs to a repository — and the harness serves many
