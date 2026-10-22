@@ -24,9 +24,9 @@ import {
   main,
   validateIndex,
   writeIndex,
-} from '../../../scripts/market.mjs'
+} from '../scripts/market.mjs'
 
-const REPO = resolve(import.meta.dirname, '..', '..', '..')
+const REPO = resolve(import.meta.dirname, '..')
 const COMMITTED = join(REPO, 'docs', 'market', 'index.json')
 const COMMIT = '0123456789abcdef0123456789abcdef01234567'
 
@@ -47,22 +47,27 @@ test('a generated index is valid format 1', () => {
   assert.equal(version.version, '1.2.3')
   assert.equal(version.source.type, 'git')
   assert.equal(version.source.commit, COMMIT)
-  assert.equal(version.source.path, BUNDLE_PATH)
+  // This repository is the bundle, so a git source names the root by leaving `path` out; the
+  // harness rejects a `.` segment and omits `&path:/` when the field is absent.
+  assert.equal(BUNDLE_PATH, null)
+  assert.equal(version.source.path, undefined)
 })
 
-test('the install spec the harness derives is a git url at the commit', () => {
-  // `marketInstallTarget` builds `git+<url>.git#<commit>&path:/<dir>` for a git source.
+test('the install spec the harness derives clones the repository root', () => {
+  // `marketInstallTarget` builds `git+<url>.git#<commit>`, adding `&path:/<dir>` only when the
+  // source names a subdirectory.
   const source = document().plugins[0].versions[0].source
-  const expected = `git+${source.url}.git#${source.commit}&path:/${source.path}`
-  assert.ok(expected.startsWith('git+https://github.com/'))
-  assert.ok(expected.includes(`#${COMMIT}`))
+  const spec = `git+${source.url}.git#${source.commit}`
+    + (source.path === undefined ? '' : `&path:/${source.path}`)
+  assert.ok(spec.startsWith('git+https://github.com/'))
+  assert.ok(spec.includes(`#${COMMIT}`))
+  assert.ok(!spec.includes('&path:'))
 })
 
-test('the index names the bundle directory that exists in this checkout', () => {
-  // The Discover tab clones this commit and installs from this path, so a path that drifted
-  // from the real directory is an install nobody can complete.
-  assert.equal(BUNDLE_PATH, 'src/dkitchen-node')
-  assert.match(readFileSync(join(REPO, BUNDLE_PATH, 'package.json'), 'utf8'), /"name"\s*:/)
+test('the bundle manifest sits at the root this index names', () => {
+  // The Discover tab clones this commit and installs from the root, so the manifest must be
+  // there; a `path` that named a subdirectory would install nothing.
+  assert.match(readFileSync(join(REPO, 'package.json'), 'utf8'), /"name"\s*:\s*"dsh-dkitchen"/)
 })
 
 test('the document-level rules are enforced', () => {
@@ -162,8 +167,8 @@ test('the committed index is valid and names this bundle', () => {
   assert.equal(version.source.commit.length, 40)
   assert.match(version.source.commit, /^[0-9a-f]{40}$/)
   assert.equal(version.engines.dsh, DSH_RANGE)
-  assert.equal(version.source.path, BUNDLE_PATH)
-  assert.equal(built.plugins[0].repository.directory, BUNDLE_PATH)
+  assert.equal(version.source.path, undefined)
+  assert.equal(built.plugins[0].repository.directory, undefined)
 })
 
 test('the committed index lists the version the bundle manifest declares', () => {

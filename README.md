@@ -1,11 +1,39 @@
 # dsh-dkitchen
 
+[![Tests](https://github.com/songmingjun3/dsh-kitchen-plugin/actions/workflows/tests.yml/badge.svg)](https://github.com/songmingjun3/dsh-kitchen-plugin/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/songmingjun3/dsh-kitchen-plugin)](https://github.com/songmingjun3/dsh-kitchen-plugin/releases/latest)
+[![License](https://img.shields.io/github/license/songmingjun3/dsh-kitchen-plugin)](LICENSE)
+
 A Deep​Seek​ Harness plugin that turns a repository into a kitchen: stations, tickets, long
 jobs, and the bell that wakes a session when its job finishes.
 
 Installing the bundle is the whole installation. The tools are registered inside the harness
 process through `ctx.tools`, so there is no package to install, no separate profile to boot, no
 broker to start, and no MCP server to spawn. Nothing else needs running.
+
+## Install
+
+**From Discover.** In the harness, open **Plugins → Discover**, add this index
+
+```text
+https://raw.githubusercontent.com/songmingjun3/dsh-kitchen-plugin/main/docs/market/index.json
+```
+
+and install `dkitchen`. The index pins an exact commit of this repository, so what you get is
+what a release names.
+
+**From a release.** Download the source archive of a tag from
+[Releases](https://github.com/songmingjun3/dsh-kitchen-plugin/releases), then point
+**Plugins → install bundle** at the unpacked directory.
+
+Either way the harness composes `cordis.patch.yml` into the profile and loads `index.js`.
+Restart the harness if it does not pick the bundle up by itself. On first start the bundle also
+installs the setup skill into the machine-wide skill root, so `/setup-dkitchen` works in every
+project.
+
+A bundle that fails to register a tool does so silently — the process keeps running and the
+tool simply is not there. Set `debug: true` in `cordis.patch.yml` to have each registration
+reported on stderr.
 
 ## What it gives a session
 
@@ -70,7 +98,23 @@ buttons, because nothing here needs running.
 | `lib/` | The tools and the rules behind them |
 | `kitchen/` | The station rules the setup skill renders into a repository |
 | `skills/setup-dkitchen/` | The setup skill, with a renderer that needs only Node |
+| `scripts/market.mjs` | Generating and validating `docs/market/index.json` |
+| `docs/plugin.md` | The user-facing guide: installing, every tool, every `.dkitchen.toml` key |
 | `tests/` | The suite: `node --test "tests/*.test.mjs"` |
 
-`docs/plugin.md` in the repository is the user-facing guide: installing, every tool, and every
-`.dkitchen.toml` key.
+This repository is the bundle: `package.json`, `index.js`, and `lib/` are at the root, which is
+why the market index names it without a `path`.
+
+## Development
+
+```bash
+node --test "tests/*.test.mjs"     # the suite; nothing to install first
+node scripts/market.mjs index --check
+```
+
+On Windows under a restricted shell, `node --test` cannot spawn its per-file child processes;
+run `node --test --experimental-test-isolation=none "tests/*.test.mjs"` there instead.
+
+Releasing: bump `version` in `package.json`, then push a matching tag such as `v1.0.0`. The
+release workflow checks the two agree, runs the suite, regenerates the market index for that
+tag's commit, and publishes the GitHub release.

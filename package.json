@@ -1,9 +1,15 @@
 {
   "name": "dsh-dkitchen",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "A kitchen of DeepSeek Harness sessions: stations, tickets, long jobs, and the bell that wakes them.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/songmingjun3/dsh-kitchen-plugin.git"
+  },
+  "homepage": "https://github.com/songmingjun3/dsh-kitchen-plugin",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",

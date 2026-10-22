@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: ['22.x', '24.x']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      # There is nothing to install: every module this bundle imports is supplied by the
+      # harness as a peer. The suite runs the plugin's own modules, so both platforms are
+      # exercised rather than merely imported.
+      - run: node --test "tests/*.test.mjs"
+      # The market index the Discover tab reads must stay valid, and must keep naming the
+      # repository root this bundle actually sits at.
+      - name: Validate the plugin market index
+        run: node scripts/market.mjs index --check

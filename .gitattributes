@@ -1,0 +1,14 @@
+# Keep the repository itself in LF, whatever the platform's `core.autocrlf` says.
+#
+# Templates are the reason this matters here: `skills/setup-dkitchen/render.js` parses the
+# `<!-- module: -->` markers and the fenced pointer blocks, and a working tree with CRLF once
+# produced files that still carried their markers. The renderer now normalizes on read as well
+# — see `normalized()` — so a checkout with CRLF still renders correctly, and this keeps the
+# committed text stable either way.
+* text=auto eol=lf
+
+# Binary assets: Git must not touch these.
+*.png binary
+*.gif binary
+*.woff2 binary
+*.ttf binary

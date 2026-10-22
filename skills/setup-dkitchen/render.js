@@ -37,8 +37,9 @@ export class RenderError extends Error {
  */
 export function render(text, modules) {
   const chosen = new Set(modules)
+  const source = normalized(text)
   const names = new Set()
-  for (const match of text.matchAll(new RegExp(SECTION.source, 'g'))) {
+  for (const match of source.matchAll(new RegExp(SECTION.source, 'g'))) {
     names.add(match[1])
   }
   const unknown = [...names].filter((name) => !MODULES.includes(name)).sort()
@@ -46,7 +47,7 @@ export function render(text, modules) {
     throw new RenderError(`unknown module markers: ${unknown.join(', ')}`)
   }
 
-  let output = text.replace(MARKER_LINE, '$1')
+  let output = source.replace(MARKER_LINE, '$1')
   output = output.replace(new RegExp(SECTION.source, 'g'), (whole, name, body) => (
     chosen.has(name) ? body : ''
   ))
@@ -54,6 +55,19 @@ export function render(text, modules) {
     throw new RenderError('unbalanced module markers')
   }
   return output.replace(/\n{3,}/g, '\n\n')
+}
+
+/**
+ * A template's text with every line ending normalized to `\n`.
+ *
+ * A Windows checkout can hand us CRLF — `core.autocrlf=true` is the default there, and a
+ * repository may also be committed with CRLF. The marker and fence patterns below are written
+ * against `\n`, so without this a CRLF template renders to files that still carry their module
+ * markers, and the pointer block comes back empty. Normalizing on read keeps the patterns
+ * simple and makes the output identical on every platform.
+ */
+export function normalized(text) {
+  return String(text).replace(/\r\n?/g, '\n')
 }
 
 /**
@@ -65,7 +79,7 @@ export function render(text, modules) {
 export function blocks(text) {
   const found = {}
   const pattern = /^## (\S+)\n\n```markdown\n([\s\S]*?)^```/gm
-  for (const match of text.matchAll(pattern)) {
+  for (const match of normalized(text).matchAll(pattern)) {
     found[match[1]] = match[2].replace(/^\n+|\n+$/g, '')
   }
   return found

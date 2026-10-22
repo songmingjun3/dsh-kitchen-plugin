@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release, such as v1.0.0'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.x'
+
+      - name: Resolve the tag
+        id: tag
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          test -n "$tag" || { echo "no tag to release"; exit 1; }
+          git rev-parse --verify "refs/tags/$tag" >/dev/null || { echo "no such tag: $tag"; exit 1; }
+          echo "name=$tag" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse "refs/tags/$tag^{commit}")" >> "$GITHUB_OUTPUT"
+
+      # The tree that is archived and checked is the tag's, not the branch tip: the release must
+      # describe what the tag points at even when `main` has moved on.
+      - name: Check out the tag
+        run: git checkout --detach "${{ steps.tag.outputs.commit }}"
+
+      - name: Check the tag matches the bundle version
+        run: |
+          version=$(node -e "process.stdout.write(require('./package.json').version)")
+          test "v$version" = "${{ steps.tag.outputs.name }}" || {
+            echo "Tag ${{ steps.tag.outputs.name }} does not match package.json version $version"
+            exit 1
+          }
+
+      - run: node --test "tests/*.test.mjs"
+
+      - name: Write the market index for this tag
+        id: index
+        run: |
+          # The tag's own commit is what a Discover install clones, so it is passed explicitly
+          # rather than letting the generator read a branch HEAD.
+          published=$(git show -s --format=%ct "${{ steps.tag.outputs.commit }}")
+          version=$(node -e "process.stdout.write(require('./package.json').version)")
+          node scripts/market.mjs index \
+            --commit "${{ steps.tag.outputs.commit }}" \
+            --published "$published" \
+            --version "$version"
+          node scripts/market.mjs index --check
+          if git diff --quiet -- docs/market/index.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package the bundle
+        run: |
+          # The archive is the tree a user installs, built from the tag's own commit.
+          git archive --format=zip \
+            --prefix="dsh-dkitchen-${{ steps.tag.outputs.name }}/" \
+            -o "dsh-dkitchen-${{ steps.tag.outputs.name }}.zip" \
+            "${{ steps.tag.outputs.commit }}"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.tag.outputs.name }}"
+          archive="dsh-dkitchen-$tag.zip"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already exists; uploading the archive"
+            gh release upload "$tag" "$archive" --clobber
+          else
+            gh release create "$tag" "$archive" \
+              --title "dsh-dkitchen $tag" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+      # The index names the tag's commit, so it has to land on the default branch for the
+      # Discover URL in the README to serve it. Done last: a published release is not rolled
+      # back by a failed index commit, but an index that names an unpublished version would be.
+      - name: Commit the index to main
+        if: steps.index.outputs.changed == 'true'
+        run: |
+          index=$(mktemp)
+          cp docs/market/index.json "$index"
+          git fetch origin main
+          git checkout -B main origin/main
+          cp "$index" docs/market/index.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/market/index.json
+          git commit -m "market: list ${{ steps.tag.outputs.name }} in the plugin market index"
+          git push origin main

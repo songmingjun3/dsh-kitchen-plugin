@@ -21,6 +21,21 @@ test('a marker on its own line leaves no blank line behind', () => {
   assert.equal(render(text, []), 'one\nthree\n')
 })
 
+test('a template checked out with CRLF renders the same as one with LF', () => {
+  // `core.autocrlf=true` is the default on Windows, so the templates a user has on disk are
+  // CRLF even though the repository stores LF. Rendering must not depend on which one it got:
+  // the marker regexes are written against `\n`.
+  const lf = 'one\n<!-- module:run-budgets -->\ntwo\n<!-- /module:run-budgets -->\nthree\n'
+  assert.equal(render(lf.replace(/\n/g, '\r\n'), []), render(lf, []))
+  assert.equal(render(lf.replace(/\n/g, '\r\n'), ['run-budgets']), 'one\ntwo\nthree\n')
+})
+
+test('the pointer block is read from a CRLF agents-block.md', () => {
+  const text = '## AGENTS.md\n\n```markdown\nline one\nline two\n```\n'
+  assert.deepEqual(blocks(text.replace(/\n/g, '\r\n')), blocks(text))
+  assert.equal(blocks(text.replace(/\n/g, '\r\n'))['AGENTS.md'], 'line one\nline two')
+})
+
 test('three or more newlines collapse to one blank line', () => {
   // A dropped block leaves its surroundings; the collapse is what keeps the file readable.
   const text = 'a\n\n\n<!-- module:artifacts -->\n<!-- /module:artifacts -->\n\n\nb\n'

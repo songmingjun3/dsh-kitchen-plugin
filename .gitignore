@@ -1,0 +1,13 @@
+node_modules/
+/output/
+*.log
+
+# The setup skill ships Python helper scripts that a repository may run; a checkout that has
+# run them leaves compiled files behind, which must never be committed.
+__pycache__/
+*.pyc
+.venv/
+
+# Left behind by a coverage run or a market-index dry run.
+coverage/
+temp-index.json
