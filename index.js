@@ -23,6 +23,7 @@ import { ConfigError, load } from './lib/config.js'
 import { resolveRoot } from './lib/cwd.js'
 import { registerSessionTools } from './lib/tools.js'
 import { registerStateTools } from './lib/state-tools.js'
+import { registerJobTools } from './lib/job-tools.js'
 
 export const name = 'dkitchen'
 
@@ -40,7 +41,8 @@ export const name = 'dkitchen'
  * one. A profile without it leaves the plugin inactive, which the harness reports, instead of
  * silently running every repository as this process's directory.
  */
-export const inject = ['tools', 'agents', 'sessions', 'workingDirectory']
+export const inject = ['tools', 'agents', 'sessions', 'workingDirectory',
+  'jobs', 'subprocess']
 
 /**
  * Mount the kitchen.
@@ -73,6 +75,7 @@ export function apply(ctx, config = {}) {
   ctx.effect(() => {
     registerSessionTools(ctx, { resolveConfig, debug })
     registerStateTools(ctx, { resolveConfig, debug })
+    registerJobTools(ctx, { resolveConfig, debug })
     registerStatusTool(ctx, { resolveConfig, debug })
     report('registered tools')
     return () => {}
