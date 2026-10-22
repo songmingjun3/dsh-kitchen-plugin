@@ -60,6 +60,21 @@ test('an ambiguous name lists the candidates instead of picking one', () => {
   })
 })
 
+test('a reused station name resolves to the live session, not the retired row', () => {
+  put('session-old', '统筹')
+  put('session-new', '统筹')
+  const knownSessions = () => [{ id: 'session-new' }]
+  assert.equal(resolveTarget('统筹', null, config(), { knownSessions }), 'session-new')
+})
+
+test('two live sessions sharing a name are still refused as ambiguous', () => {
+  put('session-a', 'Twin')
+  put('session-b', 'Twin')
+  const knownSessions = () => [{ id: 'session-a' }, { id: 'session-b' }]
+  assert.throws(() => resolveTarget('Twin', null, config(), { knownSessions }),
+    /Found 2 sessions named 'Twin'/)
+})
+
 test('an unknown name reports what it does know', () => {
   put('session-a', 'Ablation')
   assert.throws(() => resolveTarget('nope', null, config()),
