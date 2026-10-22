@@ -44,6 +44,11 @@ export const name = 'dkitchen'
  */
 export const inject = [
   'tools', 'agents', 'sessions', 'workingDirectory', 'jobs', 'subprocess', 'approval',
+  // A session opened outside the GUI's own start-a-session path still has to look like one:
+  // `agentPresets` composes the tools it runs with, and `workspaceRegistry` files it under
+  // the project whose path is its cwd. Without them a station reports that it cannot read a
+  // file and appears under "ungrouped" while it works.
+  'agentPresets', 'workspaceRegistry',
 ]
 
 /**
