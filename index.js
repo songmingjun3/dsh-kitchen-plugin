@@ -32,7 +32,15 @@ export const name = 'dkitchen'
  * A profile without them leaves the plugin inactive rather than broken, which is the harness's
  * own convention: the plugin waits instead of throwing during composition.
  */
-export const inject = ['tools', 'agents', 'sessions']
+/**
+ * Services this plugin needs.
+ *
+ * `workingDirectory` is required, not optional: cordis refuses to read a service this array
+ * does not name, and a tool that cannot learn its session's repository configures the wrong
+ * one. A profile without it leaves the plugin inactive, which the harness reports, instead of
+ * silently running every repository as this process's directory.
+ */
+export const inject = ['tools', 'agents', 'sessions', 'workingDirectory']
 
 /**
  * Mount the kitchen.
@@ -89,7 +97,7 @@ function registerStatusTool(ctx, { resolveConfig, debug }) {
     },
     output: { schema, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }] },
     async execute(args, exec) {
-      const resolved = resolveRoot({ explicit: args.cwd, agent: exec && exec.agent })
+      const resolved = resolveRoot({ explicit: args.cwd, agent: exec && exec.agent, ctx })
       let settings
       try {
         settings = resolveConfig(resolved.root)
