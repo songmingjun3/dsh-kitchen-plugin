@@ -49,6 +49,9 @@ export const inject = [
   // the project whose path is its cwd. Without them a station reports that it cannot read a
   // file and appears under "ungrouped" while it works.
   'agentPresets', 'workspaceRegistry',
+  // The window's title comes from the harness, generated from the first message unless it is
+  // pinned; a station is named for its role, not for the first thing it happened to say.
+  'sessionTitle',
 ]
 
 /**

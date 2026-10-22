@@ -1,10 +1,11 @@
 /**
  * A created session must look like one the GUI would have opened.
  *
- * Two facts decide whether a station can work: the harness files a session under `meta.cwd`
- * and composes its file and shell tools from the preset it binds. A session missing either
- * still answers — it just reports that it cannot read a file, or appears under "ungrouped" —
- * so both are guarded here rather than discovered by a station mid-ticket.
+ * What makes a station usable and recognisable is decided at creation: the harness files it
+ * under `meta.cwd`, composes its tools from the preset it binds, files it under the project's
+ * workspace, and titles it from the first message unless something pins the title. A session
+ * missing any of these still answers — it just cannot read a file, sits under "ungrouped", or
+ * ends up called "厨房配置检查" — so each is guarded here.
  */
 
 import test from 'node:test'
@@ -21,7 +22,7 @@ function scanningContext(extra = {}) {
       agents: {
         async create(options) {
           seen.push(options)
-          return { agent: {} }
+          return { agent: { session: { id: 'fake-session' } } }
         },
       },
       sessions: {},
@@ -99,4 +100,32 @@ test('a workspace attach failure does not stop the session from opening', async 
   })
   const opened = await createSession(ctx, { sessionId: 'session-f', cwd: 'F:\\AutoResearch', route: ROUTE, config: {} })
   assert.equal(opened.record.id, 'session-f')
+})
+
+test('the station name pins the harness title', async () => {
+  const titled = []
+  const { ctx } = scanningContext({
+    sessionTitle: {
+      rename(session, title) {
+        titled.push({ session, title })
+        return { title }
+      },
+    },
+  })
+  const opened = await createSession(ctx, {
+    sessionId: 'session-g', cwd: 'F:\\AutoResearch', route: ROUTE, config: {}, name: '统筹',
+  })
+  assert.equal(titled.length, 1)
+  assert.equal(titled[0].title, '统筹')
+  assert.equal(titled[0].session, opened.handle.agent.session)
+})
+
+test('a title the harness refuses does not fail the session', async () => {
+  const { ctx } = scanningContext({
+    sessionTitle: { rename() { throw new Error('not live') } },
+  })
+  const opened = await createSession(ctx, {
+    sessionId: 'session-h', cwd: 'F:\\AutoResearch', route: ROUTE, config: {}, name: '设计',
+  })
+  assert.equal(opened.record.id, 'session-h')
 })
