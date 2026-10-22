@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "title": "dkitchen 厨房",
+    "description": "用 DeepSeek Harness 会话开一间厨房：安排岗位、分发票、跑长任务，再读回结果。"
+  },
+  "labelBundle": "插件包",
+  "labelEnabled": "已启用",
+  "installed": "已安装",
+  "notInstalled": "未安装",
+  "yes": "开",
+  "no": "关",
+  "setupNote": "工具直接注册在这个 harness 进程里，所以装上这个包就等于装完了，不需要再运行任何命令。",
+  "setupConfig": ".dkitchen.toml",
+  "setupStatus": "每个仓库用这个文件提供自己的岗位、模型路由和票据规则。调用 dkitchen_status 工具可以查看某个仓库解析出的结果，包括答案来自哪个目录。",
+  "agentMessage": "dsh-dkitchen 插件包已安装，工具直接注册在进程内，不需要 Python 包，也不需要单独的 profile。仓库在根目录放一个 .dkitchen.toml 来配置自己的厨房：[kitchen] 选岗位，[models.<station>] 定路由，[status] 与 [sessions] 管词汇，可选的 [approval] 指定哪些工具可以不经询问直接放行。当用户问厨房会做什么时，调用 dkitchen_status 报告解析出的岗位、路由与审批策略，并说明答案来自哪个目录。"
+}

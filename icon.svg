@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="dkitchen">
+  <title>dkitchen</title>
+  <rect width="64" height="64" rx="14" fill="#1f2430"/>
+  <path d="M18 42h28a14 14 0 0 0-28 0z" fill="#d9a441"/>
+  <path d="M18 42h28v4H18z" fill="#8a6a2a"/>
+  <circle cx="32" cy="20" r="3.5" fill="#f4efe6"/>
+  <path d="M32 24v6" stroke="#f4efe6" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M25 47h14" stroke="#5c86f8" stroke-width="3" stroke-linecap="round"/>
+</svg>
