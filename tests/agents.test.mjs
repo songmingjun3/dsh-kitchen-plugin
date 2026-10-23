@@ -10,8 +10,11 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-import { createSession, followup } from '../lib/agents.js'
+import { createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -166,4 +169,104 @@ test('a delivered message carries its own identity', async () => {
   assert.equal(sent[0].role, 'user')
   assert.deepEqual(sent[0].content, [{ type: 'text', text: 'hello' }])
   assert.deepEqual(sent[0].source, { kind: 'user' })
+})
+
+test('a worktree gets a workspace of its own instead of staying ungrouped', async () => {
+  const parent = mkdtempSync(join(tmpdir(), 'kitchen-parent-'))
+  const worktree = join(parent, 'worktrees', 'route3-data-prep')
+  mkdirSync(worktree, { recursive: true })
+  writeFileSync(join(worktree, '.git'), 'gitdir: ../../.git/worktrees/route3-data-prep\n')
+
+  const attached = []
+  const created = []
+  const { ctx } = scanningContext({
+    workspaceRegistry: {
+      list: async () => [{ path: parent, attachSession: async (id) => attached.push(`parent:${id}`) }],
+      async create(path, title) {
+        created.push({ path, title })
+        return { path, attachSession: async (id) => attached.push(id) }
+      },
+    },
+  })
+  await createSession(ctx, { sessionId: 'session-w', cwd: worktree, route: ROUTE, config: {} })
+
+  assert.deepEqual(created, [{ path: worktree, title: 'route3-data-prep' }])
+  assert.deepEqual(attached, ['session-w'])
+})
+
+test('a plain subdirectory is not turned into a workspace', async () => {
+  const parent = mkdtempSync(join(tmpdir(), 'kitchen-parent-'))
+  const plain = join(parent, 'outputs')
+  mkdirSync(plain, { recursive: true })
+
+  const created = []
+  const { ctx } = scanningContext({
+    workspaceRegistry: {
+      list: async () => [{ path: parent, attachSession: async () => {} }],
+      async create(path, title) { created.push({ path, title }) },
+    },
+  })
+  await createSession(ctx, { sessionId: 'session-x', cwd: plain, route: ROUTE, config: {} })
+  assert.deepEqual(created, [])
+})
+
+test('a live session the kitchen did not open still gets a handle', () => {
+  const agent = { session: { id: 'session-live' } }
+  assert.deepEqual(liveHandle({ agents: { get: (id) => (id === 'session-live' ? agent : undefined) } }, 'session-live'), { agent })
+  assert.equal(liveHandle({ agents: { get: () => undefined } }, 'session-gone'), undefined)
+  assert.equal(liveHandle({}, 'session-none'), undefined)
+})
+
+test('a session that is on disk but not loaded is resumed, not refused', async () => {
+  const asked = []
+  const mounted = []
+  const ctx = {
+    agents: {
+      async resume(options) {
+        asked.push(options)
+        return { agent: { session: { id: options.resumeSessionId } } }
+      },
+    },
+    agentPresets: {
+      async mount(agentCtx, id) { mounted.push(id) },
+    },
+  }
+  const handle = await resumeSession(ctx, 'session-stored', { provider: 'qoder', model: 'qfmodel', effort: 'high' })
+
+  assert.equal(asked.length, 1)
+  assert.equal(asked[0].resumeSessionId, 'session-stored')
+  assert.deepEqual(asked[0].agentOptions, { provider: 'qoder', model: 'qfmodel', reasoningEffort: 'high' })
+  assert.equal(typeof asked[0].setup, 'function')
+  await asked[0].setup({})
+  // A resumed station keeps the tools a freshly created one gets.
+  assert.deepEqual(mounted, ['standard'])
+  assert.equal(handle.agent.session.id, 'session-stored')
+})
+
+test('a resume the harness refuses reports no handle instead of throwing', async () => {
+  const ctx = { agents: { async resume() { throw new Error('missing log') } } }
+  assert.equal(await resumeSession(ctx, 'session-gone', { provider: 'qoder', model: 'qfmodel' }), undefined)
+  assert.equal(await resumeSession({}, 'session-none', {}), undefined)
+})
+
+test('a reader loads the session first, and leaves a loaded one alone', async () => {
+  const resumed = []
+  const ctx = {
+    sessions: { get: (id) => (id === 'session-loaded' ? { id } : undefined) },
+    agents: {
+      async resume(options) { resumed.push(options.resumeSessionId); return { agent: {} } },
+    },
+  }
+  const record = { provider: 'qoder', model: 'qfmodel', effort: 'high', cwd: 'F:\\AutoResearch' }
+
+  assert.equal(await ensureLoaded(ctx, 'session-loaded', record, null), true)
+  assert.deepEqual(resumed, [])
+
+  assert.equal(await ensureLoaded(ctx, 'session-stored', record, null), true)
+  assert.deepEqual(resumed, ['session-stored'])
+})
+
+test('a reader with nothing to load says so rather than pretending it succeeded', async () => {
+  const ctx = { sessions: { get: () => undefined } }
+  assert.equal(await ensureLoaded(ctx, 'session-absent', null, null), false)
 })

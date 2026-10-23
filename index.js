@@ -26,6 +26,8 @@ import { registerWatchTool } from './lib/watch-tools.js'
 import { registerApprovalAnswerer } from './lib/approval.js'
 import { registerConfigTools } from './lib/config-tools.js'
 import { ensureSkill, installedSkill } from './lib/skill.js'
+import { attachToWorkspace } from './lib/agents.js'
+import * as registry from './lib/registry.js'
 
 export const name = 'dkitchen'
 
@@ -108,6 +110,24 @@ export function apply(ctx, config = {}) {
     registerApprovalAnswerer(ctx, { resolveConfig, debug })
     return () => {}
   })
+
+  // Sessions opened before this build learned to file worktrees, and sessions the user reopened
+  // in the GUI, are live but in no project. Reconcile once per process: the cost is one
+  // registry read per session, and the alternative is a kitchen whose worktrees stay in
+  // "ungrouped" for the rest of their life.
+  void reconcileWorkspaces(ctx, report)
+}
+
+/** File every session the kitchen knows about under a workspace, creating one where needed. */
+async function reconcileWorkspaces(ctx, report) {
+  try {
+    for (const record of registry.load().values()) {
+      if (!record.cwd) continue
+      await attachToWorkspace(ctx, record.id, record.cwd, report)
+    }
+  } catch (error) {
+    report('workspace reconciliation stopped:', String(error && error.message ? error.message : error))
+  }
 }
 
 /**
