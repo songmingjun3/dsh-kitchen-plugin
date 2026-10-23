@@ -10,8 +10,11 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-import { createSession, followup } from '../lib/agents.js'
+import { createSession, followup, liveHandle } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -146,4 +149,50 @@ test('a delivered message carries its own identity', async () => {
   assert.equal(sent[0].role, 'user')
   assert.deepEqual(sent[0].content, [{ type: 'text', text: 'hello' }])
   assert.deepEqual(sent[0].source, { kind: 'user' })
+})
+
+test('a worktree gets a workspace of its own instead of staying ungrouped', async () => {
+  const parent = mkdtempSync(join(tmpdir(), 'kitchen-parent-'))
+  const worktree = join(parent, 'worktrees', 'route3-data-prep')
+  mkdirSync(worktree, { recursive: true })
+  writeFileSync(join(worktree, '.git'), 'gitdir: ../../.git/worktrees/route3-data-prep\n')
+
+  const attached = []
+  const created = []
+  const { ctx } = scanningContext({
+    workspaceRegistry: {
+      list: async () => [{ path: parent, attachSession: async (id) => attached.push(`parent:${id}`) }],
+      async create(path, title) {
+        created.push({ path, title })
+        return { path, attachSession: async (id) => attached.push(id) }
+      },
+    },
+  })
+  await createSession(ctx, { sessionId: 'session-w', cwd: worktree, route: ROUTE, config: {} })
+
+  assert.deepEqual(created, [{ path: worktree, title: 'route3-data-prep' }])
+  assert.deepEqual(attached, ['session-w'])
+})
+
+test('a plain subdirectory is not turned into a workspace', async () => {
+  const parent = mkdtempSync(join(tmpdir(), 'kitchen-parent-'))
+  const plain = join(parent, 'outputs')
+  mkdirSync(plain, { recursive: true })
+
+  const created = []
+  const { ctx } = scanningContext({
+    workspaceRegistry: {
+      list: async () => [{ path: parent, attachSession: async () => {} }],
+      async create(path, title) { created.push({ path, title }) },
+    },
+  })
+  await createSession(ctx, { sessionId: 'session-x', cwd: plain, route: ROUTE, config: {} })
+  assert.deepEqual(created, [])
+})
+
+test('a live session the kitchen did not open still gets a handle', () => {
+  const agent = { session: { id: 'session-live' } }
+  assert.deepEqual(liveHandle({ agents: { get: (id) => (id === 'session-live' ? agent : undefined) } }, 'session-live'), { agent })
+  assert.equal(liveHandle({ agents: { get: () => undefined } }, 'session-gone'), undefined)
+  assert.equal(liveHandle({}, 'session-none'), undefined)
 })
