@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { createSession, followup, liveHandle, resumeSession } from '../lib/agents.js'
+import { createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -227,4 +227,26 @@ test('a resume the harness refuses reports no handle instead of throwing', async
   const ctx = { agents: { async resume() { throw new Error('missing log') } } }
   assert.equal(await resumeSession(ctx, 'session-gone', { provider: 'qoder', model: 'qfmodel' }), undefined)
   assert.equal(await resumeSession({}, 'session-none', {}), undefined)
+})
+
+test('a reader loads the session first, and leaves a loaded one alone', async () => {
+  const resumed = []
+  const ctx = {
+    sessions: { get: (id) => (id === 'session-loaded' ? { id } : undefined) },
+    agents: {
+      async resume(options) { resumed.push(options.resumeSessionId); return { agent: {} } },
+    },
+  }
+  const record = { provider: 'qoder', model: 'qfmodel', effort: 'high', cwd: 'F:\\AutoResearch' }
+
+  assert.equal(await ensureLoaded(ctx, 'session-loaded', record, null), true)
+  assert.deepEqual(resumed, [])
+
+  assert.equal(await ensureLoaded(ctx, 'session-stored', record, null), true)
+  assert.deepEqual(resumed, ['session-stored'])
+})
+
+test('a reader with nothing to load says so rather than pretending it succeeded', async () => {
+  const ctx = { sessions: { get: () => undefined } }
+  assert.equal(await ensureLoaded(ctx, 'session-absent', null, null), false)
 })
