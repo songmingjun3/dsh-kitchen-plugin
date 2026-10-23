@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { createSession, followup, liveHandle } from '../lib/agents.js'
+import { createSession, followup, liveHandle, resumeSession } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -195,4 +195,36 @@ test('a live session the kitchen did not open still gets a handle', () => {
   assert.deepEqual(liveHandle({ agents: { get: (id) => (id === 'session-live' ? agent : undefined) } }, 'session-live'), { agent })
   assert.equal(liveHandle({ agents: { get: () => undefined } }, 'session-gone'), undefined)
   assert.equal(liveHandle({}, 'session-none'), undefined)
+})
+
+test('a session that is on disk but not loaded is resumed, not refused', async () => {
+  const asked = []
+  const mounted = []
+  const ctx = {
+    agents: {
+      async resume(options) {
+        asked.push(options)
+        return { agent: { session: { id: options.resumeSessionId } } }
+      },
+    },
+    agentPresets: {
+      async mount(agentCtx, id) { mounted.push(id) },
+    },
+  }
+  const handle = await resumeSession(ctx, 'session-stored', { provider: 'qoder', model: 'qfmodel', effort: 'high' })
+
+  assert.equal(asked.length, 1)
+  assert.equal(asked[0].resumeSessionId, 'session-stored')
+  assert.deepEqual(asked[0].agentOptions, { provider: 'qoder', model: 'qfmodel', reasoningEffort: 'high' })
+  assert.equal(typeof asked[0].setup, 'function')
+  await asked[0].setup({})
+  // A resumed station keeps the tools a freshly created one gets.
+  assert.deepEqual(mounted, ['standard'])
+  assert.equal(handle.agent.session.id, 'session-stored')
+})
+
+test('a resume the harness refuses reports no handle instead of throwing', async () => {
+  const ctx = { agents: { async resume() { throw new Error('missing log') } } }
+  assert.equal(await resumeSession(ctx, 'session-gone', { provider: 'qoder', model: 'qfmodel' }), undefined)
+  assert.equal(await resumeSession({}, 'session-none', {}), undefined)
 })
