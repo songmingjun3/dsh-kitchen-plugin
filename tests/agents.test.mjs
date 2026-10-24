@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { applyPermission, createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
+import { applyPermission, archiveStation, createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -307,4 +307,30 @@ test('a session already under the wanted preset is not rewritten', () => {
     { permissionFor: () => 'danger-full-access' },
   )
   assert.deepEqual(set, [])
+})
+
+test('archiving retires the session through the workspace registry', async () => {
+  const asked = []
+  const ctx = {
+    workspaceRegistry: {
+      async archiveSession(id, options) { asked.push({ id, options }) },
+    },
+  }
+  await archiveStation(ctx, 'session-done')
+  assert.deepEqual(asked, [{ id: 'session-done', options: {} }])
+})
+
+test('archiving refuses running work unless the caller says to stop it', async () => {
+  const asked = []
+  const ctx = {
+    workspaceRegistry: {
+      async archiveSession(id, options) { asked.push(options) },
+    },
+  }
+  await archiveStation(ctx, 'session-busy', { stop: true })
+  assert.deepEqual(asked, [{ stopActivity: true }])
+})
+
+test('a harness without a workspace registry cannot archive, and says so', async () => {
+  await assert.rejects(() => archiveStation({}, 'session-x'), /no workspace registry/)
 })
