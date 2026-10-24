@@ -61,6 +61,9 @@ export const inject = [
   // The window's title comes from the harness, generated from the first message unless it is
   // pinned; a station is named for its role, not for the first thing it happened to say.
   'sessionTitle',
+  // `[permissions]` opens a station's sessions under a configured preset; the service is the
+  // same one `/permission` writes through, so the choice lands in the session's own record.
+  'permissionPresets',
 ]
 
 /**

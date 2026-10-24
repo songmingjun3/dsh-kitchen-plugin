@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
+import { applyPermission, createSession, ensureLoaded, followup, liveHandle, resumeSession } from '../lib/agents.js'
 
 /** A context just wide enough for `createSession`, recording what the harness was asked for. */
 function scanningContext(extra = {}) {
@@ -269,4 +269,42 @@ test('a reader loads the session first, and leaves a loaded one alone', async ()
 test('a reader with nothing to load says so rather than pretending it succeeded', async () => {
   const ctx = { sessions: { get: () => undefined } }
   assert.equal(await ensureLoaded(ctx, 'session-absent', null, null), false)
+})
+
+test('a station with a configured permission preset gets it before its first message', async () => {
+  const set = []
+  const { ctx } = scanningContext({
+    permissionPresets: {
+      current: () => 'workspace-write',
+      set(session, name) { set.push({ id: session.id, name }) },
+    },
+  })
+  const config = { permissionFor: (station) => (station === 'executor' ? 'danger-full-access' : null) }
+  await createSession(ctx, {
+    sessionId: 'session-p', cwd: 'F:\\AutoResearch', route: ROUTE, config, station: 'executor',
+  })
+  assert.deepEqual(set, [{ id: 'fake-session', name: 'danger-full-access' }])
+})
+
+test('a station without a configured preset keeps the harness default', async () => {
+  const set = []
+  const { ctx } = scanningContext({
+    permissionPresets: { current: () => 'workspace-write', set: (s, n) => set.push(n) },
+  })
+  await createSession(ctx, {
+    sessionId: 'session-q', cwd: 'F:\\AutoResearch', route: ROUTE,
+    config: { permissionFor: () => null }, station: 'verifier',
+  })
+  assert.deepEqual(set, [])
+})
+
+test('a session already under the wanted preset is not rewritten', () => {
+  const set = []
+  applyPermission(
+    { permissionPresets: { current: () => 'danger-full-access', set: (s, n) => set.push(n) } },
+    { agent: { session: { id: 'session-r' } } },
+    'executor',
+    { permissionFor: () => 'danger-full-access' },
+  )
+  assert.deepEqual(set, [])
 })

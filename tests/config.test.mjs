@@ -82,6 +82,23 @@ test('the separator is the one string allowed to be empty', () => {
   assert.equal(config.signature('Executor'), 'Executor')
 })
 
+test('the permissions table maps stations to presets', () => {
+  const root = repo('[permissions]\nexecutor = "danger-full-access"\n')
+  const config = load(root, { root })
+  assert.equal(config.permissionFor('executor'), 'danger-full-access')
+  assert.equal(config.permissionFor('verifier'), null)
+})
+
+test('a station with no permissions table gets no preset', () => {
+  const config = load(repo('[kitchen]\nstations = ["executor"]\n'), { root: undefined })
+  assert.equal(config.permissionFor('executor'), null)
+})
+
+test('a permissions row for an unknown station is refused', () => {
+  assert.throws(() => load(repo('[permissions]\nwatcher = "read-only"\n'), { root: undefined }),
+    /\[permissions\] unknown stations: watcher/)
+})
+
 test('an unknown top-level key is refused', () => {
   assert.throws(() => load(repo('nope = 1\n'), { root: undefined }), /unknown keys: nope/)
 })
