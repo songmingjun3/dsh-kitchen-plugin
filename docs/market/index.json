@@ -37,7 +37,7 @@
         "en": "Call dkitchen's tools from any session: create stations, hand out tickets, launch long jobs, and read what came back.",
         "zh": "在任何会话里调用 dkitchen 的工具：安排岗位、分发票、跑长任务，再读回结果。"
       },
-      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9ImRraXRjaGVuIj4KICA8dGl0bGU+ZGtpdGNoZW48L3RpdGxlPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMWYyNDMwIi8+CiAgPHBhdGggZD0iTTE4IDQyaDI4YTE0IDE0IDAgMCAwLTI4IDB6IiBmaWxsPSIjZDlhNDQxIi8+CiAgPHBhdGggZD0iTTE4IDQyaDI4djRIMTh6IiBmaWxsPSIjOGE2YTJhIi8+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIyMCIgcj0iMy41IiBmaWxsPSIjZjRlZmU2Ii8+CiAgPHBhdGggZD0iTTMyIDI0djYiIHN0cm9rZT0iI2Y0ZWZlNiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yNSA0N2gxNCIgc3Ryb2tlPSIjNWM4NmY4IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9ImRraXRjaGVuIj4NCiAgPHRpdGxlPmRraXRjaGVuPC90aXRsZT4NCiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMxZjI0MzAiLz4NCiAgPHBhdGggZD0iTTE4IDQyaDI4YTE0IDE0IDAgMCAwLTI4IDB6IiBmaWxsPSIjZDlhNDQxIi8+DQogIDxwYXRoIGQ9Ik0xOCA0MmgyOHY0SDE4eiIgZmlsbD0iIzhhNmEyYSIvPg0KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjIwIiByPSIzLjUiIGZpbGw9IiNmNGVmZTYiLz4NCiAgPHBhdGggZD0iTTMyIDI0djYiIHN0cm9rZT0iI2Y0ZWZlNiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPg0KICA8cGF0aCBkPSJNMjUgNDdoMTQiIHN0cm9rZT0iIzVjODZmOCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4NCjwvc3ZnPg0K",
       "author": "917Dhj",
       "homepage": "https://github.com/songmingjun3/dsh-kitchen-plugin",
       "repository": {
@@ -59,12 +59,12 @@
       },
       "versions": [
         {
-          "version": "1.1.0",
-          "publishTimestamp": 1792803303,
+          "version": "1.2.0",
+          "publishTimestamp": 1792814522,
           "source": {
             "type": "git",
             "url": "https://github.com/songmingjun3/dsh-kitchen-plugin",
-            "commit": "b2e54f582346639e66a2f59798a750863425faa6"
+            "commit": "37ceb4ca93a839a881c7b5ec7d127a02da3c5721"
           },
           "engines": {
             "dsh": ">=0.2.0-rc.1 <0.3.0"
