@@ -80,6 +80,34 @@ allow = ["dkitchen_*"]
 repository was chosen: `argument`, `session`, or `process`. A `process` answer means the
 repository was guessed rather than known.
 
+## Station default models, in Settings
+
+A repository's `.dkitchen.toml` is the right home for a route that belongs to one project, but
+every kitchen has to start somewhere. **Settings → Built-in plugins → dkitchen** has one field
+per station — orchestrator, designer, verifier, executor — for the model new sessions should
+use by default. No JSON, no TOML:
+
+```text
+Orchestrator   [ trae/deepseek-v4        ]
+Designer       [ trae/deepseek-v4        ]
+Verifier       [ trae/claude-sonnet-5    ]
+Executor       [ trae/deepseek-v4        ]
+```
+
+Write `provider/model`, or a bare model id to keep the repository's provider. A change applies
+to the **next** session opened on that station — there is nothing to restart, because the
+plugin reads the value per call.
+
+Precedence, strongest first:
+
+1. `provider`/`model` passed to `dkitchen_new_session` for that one call;
+2. `[models.<station>]` in the repository's `.dkitchen.toml`;
+3. the station default on this page;
+4. `[harness] default_provider`/`default_model` in the repository's file.
+
+Leaving a field empty is not "no model": it hands the decision back to the repository. A
+repository that names its own route — or its own `[harness]` defaults — is never overridden.
+
 ## Two deliberate behaviours
 
 **`[approval]` answers by rule, and defers by default.** The harness already asks the user
@@ -96,6 +124,11 @@ session that launched work does not have to poll.
 `client.js` adds a section to this bundle's page in **Plugins**. It reports whether the bundle
 is installed and enabled, and says where a repository's configuration lives. It has no
 buttons, because nothing here needs running.
+
+The station defaults are edited on the Settings page instead, and that form is generated from
+the plugin's own configuration schema — `lib/options.js` declares the fields with `volatile()`,
+and the harness builds the controls and writes them into the active profile's patch. This
+bundle ships no form code of its own.
 
 ## Layout
 

@@ -11,3 +11,18 @@
         # does not offer — are silent by default: the process starts, no tool appears, and
         # nothing says why.
         debug: false
+
+        # Per-station default models, edited on this bundle's page in Settings rather than by
+        # hand. The fields are declared with `volatile()`, so the harness renders them as a form
+        # and writes a change into this profile's patch; the next session opened on that station
+        # takes the new route without a restart.
+        #
+        # Leave one empty to keep the repository in charge: a station's `[models.<station>]` in
+        # `.dkitchen.toml`, or the file's `[harness] default_provider`/`default_model`, is used
+        # instead. A value here is what a repository with nothing configured falls back to.
+        #
+        # Written as `provider/model`, or a bare model id to keep the provider.
+        orchestratorModel: ''
+        designerModel: ''
+        verifierModel: ''
+        executorModel: ''

@@ -63,6 +63,28 @@ allow = ["dkitchen_*"]
 
 `dkitchen_status` 报告某个仓库解析出了什么，其中 `rootSource` 说明仓库是怎么确定的：`argument`、`session` 或 `process`。`process` 意味着仓库是猜出来的，而不是已知的。
 
+## 在设置里改岗位的默认模型
+
+单个模型的归属放在仓库自己的 `.dkitchen.toml` 里最合适，但每间厨房总要有个起点。打开 **Settings → Built-in plugins → dkitchen**，每个岗位一个输入框——总编排、总设计、核查、执行者——填新建会话默认用哪个模型。不用改 JSON，也不用改 TOML：
+
+```text
+总编排   [ trae/deepseek-v4        ]
+总设计   [ trae/deepseek-v4        ]
+核查     [ trae/claude-sonnet-5    ]
+执行者   [ trae/deepseek-v4        ]
+```
+
+填 `provider/model`，或者只填模型 id（provider 沿用仓库的设置）。改完之后对**下一个**新建的会话生效——不用重启，因为插件每次调用都会重新读这个值。
+
+优先级从强到弱：
+
+1. `dkitchen_new_session` 那一次调用里传入的 `provider`/`model`；
+2. 仓库 `.dkitchen.toml` 里的 `[models.<station>]`；
+3. 这个设置页上的岗位默认值；
+4. 仓库文件里的 `[harness] default_provider`/`default_model`。
+
+留空不等于"没有模型"，而是把决定权交回仓库。凡是自己写了路由（或写了自己的 `[harness]` 默认值）的仓库，永远不会被这里覆盖。
+
 ## 两个刻意的行为
 
 **`[approval]` 按规则作答，默认一律交回。** harness 本来就会用自己的面板询问用户，插件如果抢在前面作答，就把这个决定权拿掉了。在 `allow` 里列出的工具会被直接放行，这正是无人值守的厨房能跑它被配置去跑的事情的原因；其余的一律调用 `next()` 交回面板。没有 `[approval]` 段时，插件完全不改变任何权限行为。
@@ -73,12 +95,15 @@ allow = ["dkitchen_*"]
 
 `client.js` 会在 **Plugins** 中本 bundle 的页面上加一段内容，报告 bundle 是否已安装、是否启用，以及仓库的配置文件在哪里。没有按钮，因为这里没有任何东西需要运行。
 
+岗位默认模型在 **Settings** 页里改，那个表单是 harness 根据插件自己的配置声明生成的——`lib/options.js` 用 `volatile()` 声明字段，harness 负责搭出控件并写进当前 profile 的 patch。本 bundle 不带任何表单代码。
+
 ## 目录结构
 
 | 路径 | 作用 |
 | --- | --- |
 | `index.js` | 挂载插件：注入的服务、按每次调用解析配置、注册工具 |
 | `lib/` | 工具，以及工具背后的规则 |
+| `lib/options.js` | 插件的配置声明：Settings 里那份岗位默认模型表单就来自这里 |
 | `kitchen/` | 初始化 skill 渲染进目标仓库的岗位规则 |
 | `skills/setup-dkitchen/` | 初始化 skill，附一个只依赖 Node 的渲染器 |
 | `scripts/market.mjs` | 生成并校验 `docs/market/index.json` |

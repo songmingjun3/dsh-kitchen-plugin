@@ -29,6 +29,25 @@ test('an explicit root is used without asking git', () => {
   assert.equal(load(root, { root }).harness.default_provider, 'trae')
 })
 
+test('a file with no [harness] still resolves one, but does not claim to have declared it', () => {
+  // Every resolved configuration carries a provider and a model, because `withHelpers` fills
+  // them in. `declared` is the only honest answer to "did this repository choose its route?",
+  // and the bundle's station defaults depend on it.
+  const none = load(repo(), { root: undefined })
+  assert.equal(none.harness.default_provider, 'deepseek-official')
+  assert.equal(none.declared.harness, false)
+  assert.equal(none.declared.models, false)
+})
+
+test('a file that writes [harness] or [models] is recorded as having declared it', () => {
+  const withHarness = load(repo('[harness]\ndefault_provider = "trae"\n'), { root: undefined })
+  assert.equal(withHarness.declared.harness, true)
+
+  const withModels = load(repo('[models.executor]\nmodel = "x"\n'), { root: undefined })
+  assert.equal(withModels.declared.models, true)
+  assert.equal(withModels.declared.harness, false)
+})
+
 test('a station route falls back to the harness default field by field', () => {
   const root = repo([
     '[harness]',
