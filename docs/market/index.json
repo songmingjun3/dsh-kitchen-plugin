@@ -59,12 +59,12 @@
       },
       "versions": [
         {
-          "version": "1.0.2",
-          "publishTimestamp": 1792757158,
+          "version": "1.1.0",
+          "publishTimestamp": 1792803235,
           "source": {
             "type": "git",
             "url": "https://github.com/songmingjun3/dsh-kitchen-plugin",
-            "commit": "5d764a8c692877ba94f4bb32f06bed0b28d88e92"
+            "commit": "f2cce25a6d993e65a1769021f4d6cc746f9c85c4"
           },
           "engines": {
             "dsh": ">=0.2.0-rc.1 <0.3.0"
