@@ -32,7 +32,7 @@ https://raw.githubusercontent.com/songmingjun3/dsh-kitchen-plugin/main/docs/mark
 
 | 分组 | 工具 |
 | --- | --- |
-| 会话 | `dkitchen_new_session`、`dkitchen_send`、`dkitchen_read`、`dkitchen_info`、`dkitchen_rename`、`dkitchen_list_sessions`、`dkitchen_board`、`dkitchen_session_status` |
+| 会话 | `dkitchen_new_session`、`dkitchen_send`、`dkitchen_read`、`dkitchen_info`、`dkitchen_rename`、`dkitchen_list_sessions`、`dkitchen_board`、`dkitchen_session_status`、`dkitchen_archive` |
 | 长任务 | `dkitchen_launch`、`dkitchen_logs`、`dkitchen_stop`、`dkitchen_run_status` |
 | 票 | `dkitchen_relay`、`dkitchen_merge`、`dkitchen_log`、`dkitchen_executor_status` |
 | 监视 | `dkitchen_watch`、`dkitchen_watch_state` |
@@ -57,11 +57,20 @@ default_model = "deepseek-v4.1-flash"
 [models.executor]
 model = "deepseek-v4.1-flash"
 
+[permissions]
+executor = "workspace-write"     # 每个岗位的会话以哪个权限预设打开
+
 [approval]
 allow = ["dkitchen_*"]
 ```
 
+`[permissions]` 给每个岗位指定一个权限预设，创建会话时对着 harness 提供的预设解析。没有列出的岗位用 harness 自己的默认预设。
+
 `dkitchen_status` 报告某个仓库解析出了什么，其中 `rootSource` 说明仓库是怎么确定的：`argument`、`session` 或 `process`。`process` 意味着仓库是猜出来的，而不是已知的。
+
+## 关闭一个已经结束的会话
+
+`dkitchen_archive` 用来收尾厨房不再需要的会话：harness 会把它从所有界面隐藏、它不再有任何动作，dkitchen 也把自己的记录标为已关闭。会话还有任务在跑时会拒绝，除非传 `stop`；而且只有总编排可以归档——某个岗位在运行中把接替自己的会话关掉，正是票上那条线断掉的开始。
 
 ## 在设置里改岗位的默认模型
 

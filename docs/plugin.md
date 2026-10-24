@@ -49,7 +49,7 @@ reported on stderr, which is the quickest way to see why a tool is missing.
 
 | Group | Tools |
 | --- | --- |
-| Sessions | `dkitchen_new_session`, `dkitchen_send`, `dkitchen_read`, `dkitchen_info`, `dkitchen_rename`, `dkitchen_list_sessions`, `dkitchen_board`, `dkitchen_session_status` |
+| Sessions | `dkitchen_new_session`, `dkitchen_send`, `dkitchen_read`, `dkitchen_info`, `dkitchen_rename`, `dkitchen_list_sessions`, `dkitchen_board`, `dkitchen_session_status`, `dkitchen_archive` |
 | Long jobs | `dkitchen_launch`, `dkitchen_logs`, `dkitchen_stop`, `dkitchen_run_status` |
 | Tickets | `dkitchen_relay`, `dkitchen_merge`, `dkitchen_log`, `dkitchen_executor_status` |
 | Watching | `dkitchen_watch`, `dkitchen_watch_state` |
@@ -157,6 +157,9 @@ default_model = "deepseek-v4-flash"
 provider = "docode-claude"
 model = "claude-sonnet-5"
 effort = "high"                      # reasoning effort, when the model declares one
+
+[permissions]                        # the preset each station's sessions open under
+executor = "workspace-write"
 
 [stations]
 orchestrator = "Orchestrator"

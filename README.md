@@ -46,7 +46,7 @@ reported on stderr.
 
 | Group | Tools |
 | --- | --- |
-| Sessions | `dkitchen_new_session`, `dkitchen_send`, `dkitchen_read`, `dkitchen_info`, `dkitchen_rename`, `dkitchen_list_sessions`, `dkitchen_board`, `dkitchen_session_status` |
+| Sessions | `dkitchen_new_session`, `dkitchen_send`, `dkitchen_read`, `dkitchen_info`, `dkitchen_rename`, `dkitchen_list_sessions`, `dkitchen_board`, `dkitchen_session_status`, `dkitchen_archive` |
 | Long jobs | `dkitchen_launch`, `dkitchen_logs`, `dkitchen_stop`, `dkitchen_run_status` |
 | Tickets | `dkitchen_relay`, `dkitchen_merge`, `dkitchen_log`, `dkitchen_executor_status` |
 | Watching | `dkitchen_watch`, `dkitchen_watch_state` |
@@ -72,13 +72,27 @@ default_model = "deepseek-v4.1-flash"
 [models.executor]
 model = "deepseek-v4.1-flash"
 
+[permissions]
+executor = "workspace-write"     # the preset each station's sessions open under
+
 [approval]
 allow = ["dkitchen_*"]
 ```
 
+`[permissions]` names a permission preset per station, resolved against the presets the
+harness offers when the session is created. A station without an entry opens under the
+harness's own default.
+
 `dkitchen_status` reports what one repository resolved, and `rootSource` says how that
 repository was chosen: `argument`, `session`, or `process`. A `process` answer means the
 repository was guessed rather than known.
+
+## Retiring a session
+
+`dkitchen_archive` closes out a session the kitchen is done with: the harness hides it from
+every surface, it takes no further steps, and dkitchen marks its own row closed. It refuses
+while the session still has running work unless `stop` is set, and only the orchestrator may
+archive — a station retiring its own replacement mid-run is how a ticket loses the thread of it.
 
 ## Station default models, in Settings
 
